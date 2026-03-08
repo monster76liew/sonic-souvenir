@@ -562,6 +562,7 @@ function showPanel(p){
   document.getElementById('panel-'+p).classList.add('active');
   event.target.classList.add('active');
   if(p==='memories') renderTimeline();
+  if(p==='create') resetAll();
 }
 
 // ── Step navigation ──

@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sonic Souvenir</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Karla:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#fdf6ee;
+  --cream2:#f5ead8;
+  --paper:#fffbf5;
+  --terracotta:#c9664a;
+  --terra-light:#e8957a;
+  --gold:#b8894a;
+  --sage:#7a9e7e;
+  --dusty-blue:#6e90a8;
+  --ink:#2d2418;
+  --ink-light:#6b5a45;
+  --muted:#a89880;
+  --border:#e0d0bc;
+  --shadow:rgba(45,36,24,0.08);
+}
+body{background:var(--cream);color:var(--ink);font-family:'Karla',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* Grain texture overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");opacity:0.5;pointer-events:none;z-index:0;}
+
+.app{position:relative;z-index:1;}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);background:var(--paper);}
+.nav-logo{font-family:'Lora',serif;font-size:1.25rem;font-style:italic;color:var(--terracotta);}
+.nav-logo span{color:var(--ink);font-style:normal;}
+.nav-tabs{display:flex;gap:4px;}
+.tab-btn{padding:8px 18px;border:none;background:transparent;font-family:'Karla',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;border-radius:20px;transition:all 0.2s;letter-spacing:0.02em;}
+.tab-btn.active{background:var(--terracotta);color:white;}
+.tab-btn:hover:not(.active){background:var(--cream2);color:var(--ink);}
+
+/* ── MAIN PANELS ── */
+.panel{display:none;max-width:720px;margin:0 auto;padding:40px 24px 80px;}
+.panel.active{display:block;}
+
+/* ── HERO ── */
+.hero{text-align:center;margin-bottom:48px;}
+.hero-eyebrow{font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--terracotta);margin-bottom:16px;}
+.hero h1{font-family:'Lora',serif;font-size:clamp(1.5rem,4vw,2.2rem);font-weight:600;line-height:1.2;margin-bottom:16px;color:var(--ink);white-space:nowrap;}
+.hero h1 em{font-style:italic;color:var(--terracotta);}
+.hero p{font-size:15px;color:var(--ink-light);line-height:1.7;max-width:420px;margin:0 auto;}
+
+/* ── STEP INDICATOR ── */
+.steps-row{display:flex;align-items:center;margin-bottom:36px;}
+.step-item{display:flex;align-items:center;gap:8px;flex:1;}
+.step-circle{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--muted);flex-shrink:0;transition:all 0.3s;}
+.step-circle.done{background:var(--sage);border-color:var(--sage);color:white;}
+.step-circle.active{background:var(--terracotta);border-color:var(--terracotta);color:white;}
+.step-label{font-size:11px;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;}
+.step-label.active{color:var(--terracotta);}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 8px;}
+
+/* ── CARDS ── */
+.card{background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px var(--shadow);}
+.card-title{font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+
+/* ── UPLOAD ── */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:52px 32px;text-align:center;cursor:pointer;transition:all 0.3s;background:white;position:relative;overflow:hidden;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--terracotta);background:var(--cream2);}
+.upload-zone.has-img{padding:0;border-style:solid;border-color:var(--terra-light);}
+.upload-zone .icon{font-size:36px;margin-bottom:12px;display:block;}
+.upload-zone h3{font-family:'Lora',serif;font-size:1.1rem;color:var(--ink);margin-bottom:8px;}
+.upload-zone p{font-size:13px;color:var(--muted);}
+#preview-img{width:100%;max-height:340px;object-fit:cover;display:block;border-radius:10px;}
+#file-input{display:none;}
+
+/* ── FEELING PILLS ── */
+.feeling-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
+.feeling-pill{padding:10px 20px;border:1.5px solid var(--border);border-radius:24px;background:white;font-family:'Karla',sans-serif;font-size:13px;color:var(--ink-light);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.feeling-pill:hover{border-color:var(--terracotta);color:var(--terracotta);}
+.feeling-pill.selected{background:var(--terracotta);border-color:var(--terracotta);color:white;}
+
+/* ── PERSONAL INPUT ── */
+.personal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.personal-item{background:white;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.personal-item:hover{border-color:var(--dusty-blue);}
+.personal-item.selected{border-color:var(--dusty-blue);background:#f0f5f8;}
+.personal-item .p-icon{font-size:22px;margin-bottom:6px;display:block;}
+.personal-item .p-label{font-size:12px;color:var(--muted);letter-spacing:0.05em;}
+.personal-item .p-val{font-size:13px;color:var(--ink);margin-top:4px;font-weight:500;}
+
+textarea,input[type=text],input[type=password]{width:100%;background:white;border:1.5px solid var(--border);color:var(--ink);font-family:'Lora',serif;font-style:italic;font-size:14px;padding:14px 16px;resize:none;line-height:1.6;outline:none;border-radius:10px;transition:border-color 0.2s;}
+textarea:focus,input[type=text]:focus,input[type=password]:focus{border-color:var(--terracotta);}
+textarea::placeholder,input::placeholder{color:var(--muted);font-style:italic;}
+
+/* ── PROMPT EDITOR ── */
+.prompt-editor{position:relative;}
+.prompt-attempts{display:flex;gap:6px;margin-bottom:10px;}
+.attempt-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:background 0.3s;}
+.attempt-dot.used{background:var(--terracotta);}
+.attempt-dot.remaining{background:var(--sage);}
+.attempt-label{font-size:11px;color:var(--muted);margin-left:4px;align-self:center;}
+
+/* ── BUTTONS ── */
+.btn{padding:14px 28px;border-radius:8px;font-family:'Karla',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;letter-spacing:0.03em;}
+.btn-primary{background:var(--terracotta);color:white;width:100%;}
+.btn-primary:hover{background:#b85a3f;}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-secondary{background:var(--cream2);color:var(--ink);border:1.5px solid var(--border);}
+.btn-secondary:hover{border-color:var(--terracotta);color:var(--terracotta);}
+.btn-sm{padding:9px 18px;font-size:12px;border-radius:6px;}
+
+/* ── STATUS ── */
+.status-bar{text-align:center;padding:24px;font-size:13px;color:var(--muted);display:none;letter-spacing:0.05em;}
+.status-bar.active{display:block;}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--terracotta);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.error-bar{background:#fef0ed;border:1.5px solid #f5c4b8;color:#c9441a;padding:14px 18px;border-radius:8px;font-size:13px;margin-top:12px;display:none;line-height:1.6;}
+
+/* ── RESULT ── */
+.result-photo{width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-bottom:20px;}
+
+.colour-strip{display:flex;gap:3px;margin:10px 0 4px;height:6px;border-radius:4px;overflow:hidden;opacity:0.7;}
+.colour-chip{flex:1;transition:transform 0.2s;}
+.colour-chip:hover{transform:scaleY(1.5);}
+
+.vibe-quote{font-family:'Lora',serif;font-style:italic;font-size:1.05rem;line-height:1.8;color:var(--ink);padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:16px 0;}
+
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.tag{padding:5px 12px;background:var(--cream2);border-radius:16px;font-size:11px;color:var(--ink-light);letter-spacing:0.05em;}
+
+.lyrics-block{font-family:'Lora',serif;font-size:0.9rem;line-height:2.1;white-space:pre-wrap;color:var(--ink);}
+.lyrics-chorus{color:var(--terracotta);font-weight:600;}
+
+/* ── AUDIO PLAYER ── */
+.player-wrap{background:linear-gradient(135deg,var(--cream2),var(--paper));border:1.5px solid var(--border);border-radius:12px;padding:24px;}
+.player-top{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.play-btn{width:52px;height:52px;border-radius:50%;background:var(--terracotta);border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;box-shadow:0 4px 12px rgba(201,102,74,0.3);}
+.play-btn:hover{background:#b85a3f;transform:scale(1.05);}
+.player-meta{flex:1;}
+.player-song{font-family:'Lora',serif;font-size:1rem;font-style:italic;color:var(--ink);margin-bottom:3px;}
+.player-info{font-size:11px;color:var(--muted);letter-spacing:0.05em;}
+.waveform{display:flex;align-items:center;gap:2px;height:44px;margin-bottom:12px;cursor:pointer;}
+.bar{flex:1;background:var(--terracotta);border-radius:2px;opacity:0.3;}
+.bar.playing{animation:wave var(--spd) ease-in-out infinite alternate;opacity:0.8;}
+@keyframes wave{from{height:10%}to{height:100%}}
+.progress-track{height:4px;background:var(--border);border-radius:4px;cursor:pointer;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--terracotta),var(--terra-light));border-radius:4px;width:0%;transition:width 0.15s linear;}
+
+.action-row{display:flex;gap:10px;margin-top:16px;}
+.action-btn{flex:1;padding:11px;border:1.5px solid var(--border);background:white;color:var(--ink-light);font-family:'Karla',sans-serif;font-size:12px;cursor:pointer;border-radius:8px;transition:all 0.2s;letter-spacing:0.03em;}
+.action-btn:hover{border-color:var(--terracotta);color:var(--terracotta);}
+.share-action{border-color:var(--dusty-blue)!important;color:var(--dusty-blue)!important;}
+.share-action:hover{background:var(--dusty-blue)!important;color:white!important;}
+
+/* ── MEMORY TIMELINE ── */
+.timeline-empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.timeline-empty .big-icon{font-size:48px;margin-bottom:16px;display:block;opacity:0.5;}
+.timeline-grid{display:grid;gap:16px;}
+.memory-card{background:var(--paper);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow);transition:transform 0.2s,box-shadow 0.2s;}
+.memory-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--shadow);}
+.memory-img{width:100%;height:160px;object-fit:cover;}
+.memory-body{padding:16px;}
+.memory-date{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.memory-title{font-family:'Lora',serif;font-size:1rem;font-style:italic;color:var(--ink);margin-bottom:6px;}
+.memory-location{font-size:12px;color:var(--ink-light);}
+.memory-mood{display:inline-block;padding:3px 10px;border-radius:12px;font-size:10px;background:var(--cream2);color:var(--terracotta);margin-top:8px;letter-spacing:0.05em;}
+.memory-play{float:right;width:32px;height:32px;border-radius:50%;background:var(--terracotta);border:none;color:white;font-size:12px;cursor:pointer;margin-top:-4px;transition:background 0.2s;}
+.memory-play:hover{background:#b85a3f;}
+.memory-colours{display:flex;gap:3px;margin-top:10px;height:6px;}
+.memory-colour-chip{flex:1;border-radius:2px;}
+
+/* ── POWERED BY FOOTER ── */
+.powered-by{text-align:center;padding:40px 24px 60px;color:var(--muted);font-size:11px;letter-spacing:0.08em;}
+.powered-by-badges{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;}
+.powered-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:10px;color:var(--muted);background:var(--paper);letter-spacing:0.05em;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp 0.5s ease both;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><em>Sonic</em> <span>Souvenir</span></div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="showPanel('create')">✦ Create</button>
+    <button class="tab-btn" onclick="showPanel('collab')">👥 Collab</button>
+    <button class="tab-btn" onclick="showPanel('memories')">📖 Memories</button>
+  </div>
+</nav>
+
+<!-- ═══ CREATE PANEL ═══ -->
+<div class="panel active" id="panel-create">
+
+  <div class="hero">
+    <div class="hero-eyebrow">✦ ASB She Builds · Women's Day 2026 ✦</div>
+    <h1>Your Place · Your Feeling · <em>Your Song</em></h1>
+    <p>Photo anywhere on earth — Eiffel Tower, Petronas Towers, your grandma's backyard — and walk away with a melody that knows exactly where you were.</p>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps-row" id="steps-row">
+    <div class="step-item"><div class="step-circle active" id="sc1">1</div><span class="step-label active">Photo</span></div>
+    <div class="step-line"></div>
+    <div class="step-item"><div class="step-circle" id="sc2">2</div><span class="step-label">Feeling</span></div>
+    <div class="step-line"></div>
+    <div class="step-item"><div class="step-circle" id="sc3">3</div><span class="step-label">About You</span></div>
+    <div class="step-line"></div>
+    <div class="step-item"><div class="step-circle" id="sc4">4</div><span class="step-label">Your Song</span></div>
+  </div>
+
+  <!-- STEP 1: Photo -->
+  <div id="s1">
+    <div class="upload-zone" id="upload-zone">
+      <span class="icon">📸</span>
+      <h3>Drop your photo here</h3>
+      <p>Any place · Any moment · Anywhere on earth</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*">
+
+  </div>
+
+  <!-- Hidden lyria status for internal use -->
+  <div id="lyria-status" style="display:none"></div>
+
+  <!-- STEP 2: Feeling -->
+  <div id="s2" style="display:none">
+    <div class="card fade-in">
+      <div class="card-title">💭 How are you feeling right now? <span style="color:var(--muted);font-size:10px;font-weight:300;">select all that apply</span></div>
+      <div class="feeling-grid">
+        <button class="feeling-pill" data-f="joyful">😄 Joyful</button>
+        <button class="feeling-pill" data-f="nostalgic">🌅 Nostalgic</button>
+        <button class="feeling-pill" data-f="peaceful">🌿 Peaceful</button>
+        <button class="feeling-pill" data-f="excited">⚡ Excited</button>
+        <button class="feeling-pill" data-f="melancholic">🌧 Melancholic</button>
+        <button class="feeling-pill" data-f="grateful">🙏 Grateful</button>
+        <button class="feeling-pill" data-f="adventurous">🗺 Adventurous</button>
+        <button class="feeling-pill" data-f="romantic">💛 Romantic</button>
+        <button class="feeling-pill" data-f="lonely">🌙 Lonely</button>
+        <button class="feeling-pill" data-f="free">🕊 Free</button>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-title">✍️ Tell me something about this moment</div>
+      <textarea id="moment-text" rows="3" placeholder="e.g. This is the view from my grandma's window. I haven't been here in 10 years..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="goStep(3)">Continue →</button>
+  </div>
+
+  <!-- STEP 3: About You -->
+  <div id="s3" style="display:none">
+    <div class="card fade-in">
+      <div class="card-title">🎨 Shape your song's personality</div>
+
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Select what fits you — this weaves your character into the music.</p>
+
+      <div style="margin-bottom:20px">
+        <div class="card-title" style="margin-bottom:10px">Musical taste</div>
+        <div class="feeling-grid">
+          <button class="feeling-pill" data-g="folk">🎸 Folk</button>
+          <button class="feeling-pill" data-g="jazz">🎷 Jazz</button>
+          <button class="feeling-pill" data-g="pop">🎤 Pop</button>
+          <button class="feeling-pill" data-g="electronic">🎛 Electronic</button>
+          <button class="feeling-pill" data-g="classical">🎻 Classical</button>
+          <button class="feeling-pill" data-g="indie">🌿 Indie</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div class="card-title" style="margin-bottom:10px">Tempo vibe</div>
+        <div class="feeling-grid">
+          <button class="feeling-pill" data-t="slow">🐢 Slow & tender</button>
+          <button class="feeling-pill" data-t="medium">🚶 Easy walk</button>
+          <button class="feeling-pill" data-t="upbeat">🏃 Upbeat</button>
+          <button class="feeling-pill" data-t="fast">⚡ Fast & electric</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card-title" style="margin-bottom:10px">What describes your life right now? <span style="color:var(--muted);font-size:10px;font-weight:300;">(a word, a phrase, anything)</span></div>
+        <input type="text" id="life-word" placeholder="e.g. finally finding my rhythm · in between chapters · chaotically happy...">
+      </div>
+    </div>
+
+    <!-- Editable Prompt -->
+    <div class="card fade-in">
+      <div class="card-title">✏️ Fine-tune the music prompt
+        <span style="font-size:10px;color:var(--sage);margin-left:8px;">— 3 edits allowed</span>
+      </div>
+      <div class="prompt-attempts" id="prompt-dots">
+        <div class="attempt-dot remaining"></div>
+        <div class="attempt-dot remaining"></div>
+        <div class="attempt-dot remaining"></div>
+        <span class="attempt-label">edits remaining</span>
+      </div>
+      <textarea id="prompt-override" rows="3" placeholder="Leave blank to let the AI decide, or describe the song you want... e.g. 'A gentle acoustic guitar melody with soft piano, evoking golden afternoon light and the feeling of coming home'"></textarea>
+    </div>
+
+    <button class="btn btn-primary" id="gen-btn" onclick="generateSong()">✦ Compose My Sonic Souvenir</button>
+  </div>
+
+  <!-- STEP 4: Result -->
+  <div id="s4" style="display:none">
+
+    <!-- Prototype disclaimer banner -->
+    <div style="background:linear-gradient(135deg,#f0f5f8,#e8f0f5);border:1.5px solid #b0c8d8;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;" class="fade-in">
+      <div style="font-size:22px;flex-shrink:0;">🚧</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:6px;">Prototype Demo — Concept Preview</div>
+        <div style="font-size:11px;color:var(--ink-light);line-height:1.8;">
+          ✦ <strong>Audio:</strong> Playing a synthesised melody — real AI music via <strong>Lyria by Google</strong> activates in production.<br>
+          ✦ <strong>Song:</strong> Demo content shown — real Claude Vision generates a unique song from <em>your</em> photo in production.<br>
+          ✦ <strong>Payments:</strong> Duration-tiered pricing (30s free → RM3 → RM8 → RM18) activates in production.<br>
+          ✦ <strong>Accounts:</strong> Memory timeline persistence activates with backend in production.
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in" id="result-vibe">
+      <img id="result-photo" class="result-photo" src="" alt="">
+      <div class="card-title" id="result-song-title" style="font-family:'Lora',serif;font-size:1.2rem;font-style:italic;color:var(--terracotta);letter-spacing:0;margin-bottom:4px;"></div>
+      <div id="result-location" style="font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
+      <div class="colour-strip" id="colour-strip"></div>
+      <div class="vibe-quote" id="result-vibe-text"></div>
+      <div class="tag-row" id="result-tags"></div>
+    </div>
+
+    <div class="card fade-in" id="result-memory-echo" style="display:none">
+      <div class="card-title">💭 Your memory, woven in</div>
+      <div id="echo-text" style="font-family:'Lora',serif;font-style:italic;color:var(--ink-light);font-size:0.95rem;line-height:1.8;"></div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-title">📝 Your lyrics <span style="color:var(--terracotta);font-size:10px;">chorus in coral</span></div>
+      <div class="lyrics-block" id="result-lyrics"></div>
+    </div>
+
+    <!-- Re-generate with edits -->
+    <div class="card fade-in" id="regen-card">
+      <div class="card-title">✏️ Not quite right? Adjust and regenerate
+        <span id="edits-left-label" style="font-size:10px;color:var(--sage);margin-left:8px;"></span>
+      </div>
+      <div class="prompt-attempts" id="regen-dots"></div>
+      <textarea id="regen-prompt" rows="2" placeholder="Describe what to change... e.g. 'Make it more upbeat' or 'Add a tropical feel'"></textarea>
+      <br><br>
+      <button class="btn btn-secondary btn-sm" id="regen-btn" onclick="regenSong()">↺ Regenerate</button>
+    </div>
+
+    <!-- Player -->
+    <div class="player-wrap fade-in">
+      <div class="player-top">
+        <button class="play-btn" id="play-btn">▶</button>
+        <div class="player-meta">
+          <div class="player-song" id="player-song-name">–</div>
+          <div class="player-info" id="player-info">🎹 Synthesised melody · Lyria real music in production</div>
+        </div>
+      </div>
+      <div class="waveform" id="waveform"></div>
+      <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+      <div class="action-row">
+        <button class="action-btn" id="copy-btn">📋 Copy Lyrics</button>
+        <button class="action-btn" id="save-btn">💾 Save to Memories</button>
+        <button class="action-btn" onclick="resetAll()">🔄 New Photo</button>
+      </div>
+
+      <!-- Soft account nudge — no pressure -->
+      <div id="account-nudge" style="margin-top:16px;padding:16px;background:var(--cream2);border-radius:10px;border:1px solid var(--border);display:none;">
+        <div style="font-size:12px;color:var(--ink-light);line-height:1.7;margin-bottom:12px;">
+          <strong style="color:var(--ink);">Want to keep this forever?</strong><br>
+          No pressure — you can always just copy your lyrics and go. But if you travel a lot and want a timeline of every place, feeling and song, you can create a free account. Or don't — totally up to you. 🌍
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" style="flex:1;min-width:140px;" onclick="showAccountModal()">✦ Create free account</button>
+          <button class="btn btn-secondary btn-sm" style="flex:1;min-width:140px;" onclick="document.getElementById('account-nudge').style.display='none'">Maybe later, I'm just passing through 👋</button>
+        </div>
+      </div>
+
+      <!-- Share row -->
+      <div style="margin-top:12px;">
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">✦ Share your souvenir</div>
+        <div class="action-row">
+          <button class="action-btn share-action" id="email-btn" onclick="shareEmail()">📧 Email</button>
+          <button class="action-btn share-action" id="whatsapp-btn" onclick="shareWhatsApp()">💬 WhatsApp</button>
+          <button class="action-btn share-action" id="native-share-btn" onclick="shareNative()">📤 Share</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="status-bar" id="status"><span class="spin"></span><span id="status-text">Composing...</span></div>
+  <div class="error-bar" id="error-bar"></div>
+</div>
+
+<!-- ═══ MEMORIES PANEL ═══ -->
+<div class="panel" id="panel-memories">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;">
+    <div>
+      <h2 style="font-family:'Lora',serif;font-size:1.5rem;font-style:italic;">My Memory Timeline</h2>
+      <p style="font-size:13px;color:var(--muted);margin-top:4px;">Every place you've been. Every feeling you've had.</p>
+    </div>
+    <span id="memory-count" style="font-size:12px;color:var(--muted);"></span>
+  </div>
+  <div class="timeline-grid" id="timeline-grid">
+    <div class="timeline-empty">
+      <span class="big-icon">🗺</span>
+      <p style="font-family:'Lora',serif;font-style:italic;font-size:1.1rem;margin-bottom:8px;">No memories yet</p>
+      <p style="font-size:13px;">Create your first Sonic Souvenir to start your timeline.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Account modal -->
+<div id="account-modal" style="display:none;position:fixed;inset:0;background:rgba(45,36,24,0.5);z-index:100;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--paper);border-radius:16px;max-width:420px;width:100%;padding:36px;box-shadow:0 20px 60px rgba(0,0,0,0.2);position:relative;">
+    <button onclick="document.getElementById('account-modal').style.display='none'" style="position:absolute;top:16px;right:16px;border:none;background:none;font-size:18px;color:var(--muted);cursor:pointer;">✕</button>
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:32px;margin-bottom:8px;">🗺</div>
+      <div style="font-family:'Lora',serif;font-size:1.3rem;font-style:italic;color:var(--ink);margin-bottom:8px;">Start your memory timeline</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;">Every photo. Every feeling. Every song. In one place — whenever you want it.</div>
+    </div>
+    <div style="background:var(--cream2);border-radius:10px;padding:16px;margin-bottom:20px;font-size:12px;color:var(--ink-light);line-height:1.8;">
+      ✦ No subscription required<br>
+      ✦ Pay only when you create a song<br>
+      ✦ Your data is yours — export or delete anytime<br>
+      ✦ Or just use it without an account, no pressure
+    </div>
+    <input type="email" placeholder="your@email.com" style="margin-bottom:12px;font-style:normal;font-family:'Karla',sans-serif;">
+    <button class="btn btn-primary" onclick="alert('Account creation coming soon! For now, your memories are saved in this session. 🎵')">✦ Create my free account</button>
+    <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted);">Already have an account? <a href="#" style="color:var(--terracotta);">Sign in</a></div>
+  </div>
+</div>
+<!-- ═══ COLLAB PANEL ═══ -->
+<div class="panel" id="panel-collab">
+  <div style="text-align:center;margin-bottom:40px;">
+    <div style="font-size:40px;margin-bottom:12px;">👥</div>
+    <h2 style="font-family:'Lora',serif;font-size:1.6rem;font-style:italic;margin-bottom:10px;">Create a song together</h2>
+    <p style="font-size:14px;color:var(--muted);max-width:400px;margin:0 auto;line-height:1.7;">Same place, different feelings — the song blends both. Perfect for travel mates, couples, or strangers who share a moment.</p>
+  </div>
+
+  <!-- How it works -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:40px;">
+    <div style="text-align:center;padding:20px 12px;background:var(--paper);border:1px solid var(--border);border-radius:12px;">
+      <div style="font-size:28px;margin-bottom:8px;">📸</div>
+      <div style="font-size:12px;font-weight:500;color:var(--ink);margin-bottom:4px;">One photo</div>
+      <div style="font-size:11px;color:var(--muted);">Anyone in the group uploads the shared moment</div>
+    </div>
+    <div style="text-align:center;padding:20px 12px;background:var(--paper);border:1px solid var(--border);border-radius:12px;">
+      <div style="font-size:28px;margin-bottom:8px;">💭</div>
+      <div style="font-size:12px;font-weight:500;color:var(--ink);margin-bottom:4px;">Many feelings</div>
+      <div style="font-size:11px;color:var(--muted);">Each person adds their own emotion and memory</div>
+    </div>
+    <div style="text-align:center;padding:20px 12px;background:var(--paper);border:1px solid var(--border);border-radius:12px;">
+      <div style="font-size:28px;margin-bottom:8px;">🎵</div>
+      <div style="font-size:12px;font-weight:500;color:var(--ink);margin-bottom:4px;">One blended song</div>
+      <div style="font-size:11px;color:var(--muted);">A melody that carries everyone's perspective</div>
+    </div>
+  </div>
+
+  <!-- Session creator -->
+  <div class="card">
+    <div class="card-title">✦ Start a collab session</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;">Generate a session code and share it with your travel mates. Everyone joins, adds their feeling, and the AI composes a song from all of you.</p>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1;min-width:180px;" onclick="startCollabSession()">✦ Create new session</button>
+      <button class="btn btn-secondary" style="flex:1;min-width:180px;" onclick="document.getElementById('join-row').style.display='block'">👋 Join a session</button>
+    </div>
+
+    <div id="join-row" style="display:none;margin-top:16px;">
+      <input type="text" id="collab-code-input" placeholder="Enter session code e.g. SUNSET-42" style="font-style:normal;font-family:'Karla',sans-serif;margin-bottom:10px;">
+      <button class="btn btn-primary btn-sm" onclick="joinCollabSession()">Join →</button>
+    </div>
+  </div>
+
+  <!-- Active session display -->
+  <div class="card" id="collab-session-card" style="display:none;">
+    <div class="card-title">✦ Your session is live</div>
+    <div style="text-align:center;padding:20px 0;">
+      <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Share this code</div>
+      <div id="collab-code-display" style="font-family:'Lora',serif;font-size:2.5rem;font-style:italic;color:var(--terracotta);letter-spacing:0.1em;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="action-btn" onclick="copyCollabCode()">📋 Copy code</button>
+        <button class="action-btn" onclick="shareCollabWhatsApp()">💬 Share on WhatsApp</button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px;">
+      <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Participants joined</div>
+      <div id="collab-participants" style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;"></div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="card-title">Your feeling for this moment</div>
+      <div class="feeling-grid" id="collab-feelings">
+        <button class="feeling-pill" data-cf="joyful">😄 Joyful</button>
+        <button class="feeling-pill" data-cf="nostalgic">🌅 Nostalgic</button>
+        <button class="feeling-pill" data-cf="peaceful">🌿 Peaceful</button>
+        <button class="feeling-pill" data-cf="excited">⚡ Excited</button>
+        <button class="feeling-pill" data-cf="grateful">🙏 Grateful</button>
+        <button class="feeling-pill" data-cf="adventurous">🗺 Adventurous</button>
+      </div>
+      <textarea id="collab-my-memory" rows="2" placeholder="Add your memory of this moment..." style="margin-top:12px;"></textarea>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="submitCollabFeeling()">✦ Add my feeling to the song</button>
+    </div>
+  </div>
+
+  <!-- Waiting / compose -->
+  <div class="card" id="collab-compose-card" style="display:none;">
+    <div class="card-title">✦ Ready to compose</div>
+    <div id="collab-summary" style="font-size:13px;color:var(--ink-light);line-height:1.8;margin-bottom:20px;"></div>
+    <button class="btn btn-primary" onclick="composeCollabSong()">✦ Compose our shared song</button>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;background:var(--cream2);border-radius:12px;">
+    <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+      <strong style="color:var(--ink);">🚧 Coming in v2</strong><br>
+      Real-time sync · Collaborative lyric editing · Group memory timeline<br>
+      <span style="font-size:11px;">This is a concept preview — the magic is coming soon.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Powered by footer -->
+<div class="powered-by">
+  <div>Crafted with love at ASB She Builds · Women's Day 2026</div>
+  <div class="powered-by-badges">
+    <span class="powered-badge">✦ Claude AI</span>
+    <span class="powered-badge">🎵 Lyria by Google</span>
+    <span class="powered-badge">🌍 Your memories, forever</span>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ── State ──
+let imgB64=null, imgMime=null, imgDataUrl=null;
+let selectedFeeling='', selectedGenre='', selectedTempo='medium';
+let currentAnalysis=null;
+let editsUsed=0; const MAX_EDITS=3;
+let memories=[];
+let audioCtx=null, isPlaying=false, playInterval=null, currentBeat=0;
+
+// ── Panel switching ──
+function showPanel(p){
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('panel-'+p).classList.add('active');
+  event.target.classList.add('active');
+  if(p==='memories') renderTimeline();
+}
+
+// ── Step navigation ──
+function goStep(n){
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('s'+i).style.display = i===n?'block':'none';
+    const sc=document.getElementById('sc'+i);
+    if(i<n){sc.classList.remove('active');sc.classList.add('done');sc.textContent='✓';}
+    else if(i===n){sc.classList.add('active');sc.classList.remove('done');}
+    else{sc.classList.remove('active','done');sc.textContent=i;}
+  });
+  // Hide API field once song is generated (step 4), show otherwise
+  const apiField=document.querySelector('.api-field');
+  if(apiField) apiField.style.display = n===4 ? 'none' : 'block';
+}
+
+// ── Upload ──
+const zone=document.getElementById('upload-zone');
+const inp=document.getElementById('file-input');
+zone.addEventListener('click',()=>inp.click());
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag');});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+inp.addEventListener('change',()=>{if(inp.files[0])handleFile(inp.files[0]);});
+
+function handleFile(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    imgDataUrl=e.target.result;
+    imgB64=imgDataUrl.split(',')[1];
+    imgMime=file.type;
+    zone.innerHTML=`<img id="preview-img" src="${imgDataUrl}" alt="photo">`;
+    zone.classList.add('has-img');
+    setTimeout(()=>goStep(2),300);
+  };
+  r.readAsDataURL(file);
+}
+
+// ── Pill selectors ──
+// Feelings: MULTI-select
+document.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{
+  b.classList.toggle('selected');
+  selectedFeeling = Array.from(document.querySelectorAll('[data-f].selected')).map(x=>x.dataset.f).join(', ');
+}));
+// Genre: single-select
+document.querySelectorAll('[data-g]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-g]').forEach(x=>x.classList.remove('selected'));
+  b.classList.add('selected'); selectedGenre=b.dataset.g;
+}));
+// Tempo: single-select
+document.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-t]').forEach(x=>x.classList.remove('selected'));
+  b.classList.add('selected'); selectedTempo=b.dataset.t;
+}));
+
+// ── Backend config (in production these live server-side, never exposed) ──
+const ANTHROPIC_KEY = '';  // set by operator — leave blank for demo mode
+const GCP_TOKEN     = '';  // set by operator — leave blank to use Web Audio
+const GCP_PROJECT   = '';  // set by operator
+
+// ── Demo mode sample response ──
+const DEMO_RESPONSE = {
+  songTitle: "Golden Hour at the Corner Table",
+  location: "warm café, soft afternoon light",
+  vibeDescription: "The amber warmth spills across the table like a quiet promise — the kind of afternoon that asks nothing of you except to stay a little longer. There's a gentleness here, in the way the light catches the edges of everything, turning the ordinary into something worth remembering. This is the feeling of being exactly where you're supposed to be.",
+  colours: ["#c9844a","#e8b87a","#f5d4a0","#a07848","#6b4c2a"],
+  dominantMood: "nostalgic",
+  colourMusicMapping: "Warm amber and golden tones mapped to a gentle acoustic folk melody in G major — the colour of memory and late afternoon light.",
+  lyrics: `[Verse 1]
+The light comes through the window slow
+Like honey poured on everything below
+Your coffee's cold, the hours slipped away
+But I don't mind, I'd stay here all day
+
+[Chorus]
+Golden hour at the corner table
+Every ordinary thing feels like a fable
+I'm writing you into every song I know
+Golden hour, don't let go
+
+[Verse 2]
+The city hums its restless afternoon
+The shadows stretch and call for us too soon
+But right now there's nowhere else I'd be
+Than right here in this moment, you and me
+
+[Chorus]
+Golden hour at the corner table
+Every ordinary thing feels like a fable
+I'm writing you into every song I know
+Golden hour, don't let go
+
+[Outro]
+Stay a little longer
+Let the light grow stronger
+Some places hold you like a song
+Golden hour, where we belong`,
+  tempo: "slow",
+  genre: "folk",
+  musicalKey: "G major",
+  bpm: 72
+};
+
+// ── Generate ──
+async function generateSong(isRegen=false){
+  const apiKey = ANTHROPIC_KEY;
+  const gcpToken = GCP_TOKEN;
+  if(!imgB64){showError('Please upload a photo first.');return;}
+
+  if(isRegen){
+    if(editsUsed>=MAX_EDITS){showError('Maximum 3 edits reached for this souvenir.');return;}
+    editsUsed++;
+    updateEditDots();
+  }
+
+  stopMelody();
+  showStatus(isRegen?'Reimagining your song...':'Composing your sonic souvenir...');
+  document.getElementById('s4').style.display='none';
+  document.getElementById('error-bar').style.display='none';
+
+  const promptOverride = isRegen
+    ? document.getElementById('regen-prompt').value.trim()
+    : document.getElementById('prompt-override').value.trim();
+
+  const momentText=document.getElementById('moment-text').value.trim();
+  const lifeWord=document.getElementById('life-word').value.trim();
+
+  try{
+    // Use real Claude API if key provided, otherwise fall back to demo response
+    let analysis;
+    if(apiKey){
+      analysis = await callClaude(apiKey, promptOverride, momentText, lifeWord);
+    } else {
+      // Demo mode — simulate a short delay for realism
+      showStatus('✦ Composing your sonic souvenir...');
+      await new Promise(r => setTimeout(r, 2200));
+      analysis = {...DEMO_RESPONSE};
+      // Personalise the demo response with user's inputs
+      if(selectedFeeling) analysis.dominantMood = selectedFeeling.split(',')[0].trim();
+      if(selectedGenre) analysis.genre = selectedGenre;
+      if(selectedTempo) analysis.tempo = selectedTempo;
+      if(momentText) analysis.vibeDescription = momentText + ' — ' + analysis.vibeDescription;
+    }
+
+    currentAnalysis=analysis;
+    displayResult(analysis);
+    if(!apiKey){
+      // Show subtle demo badge
+      const badge = document.createElement('div');
+      badge.style.cssText='text-align:center;font-size:10px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px;';
+      badge.innerHTML='✦ Demo mode — <a href="https://console.anthropic.com" target="_blank" style="color:var(--terracotta);">add your API key</a> for a song from your own photo';
+      document.getElementById('result-vibe').prepend(badge);
+    }
+
+    // Try Lyria if token provided, otherwise use Web Audio
+    if(gcpToken){
+      showStatus('🎵 Composing real music with Lyria...');
+      setLyriaStatus('⏳ Generating with Lyria...', '#a07040');
+      const audioUrl = await callLyria(gcpToken, analysis);
+      if(audioUrl){
+        setupLyriaPlayer(analysis, audioUrl);
+        setLyriaStatus('✅ Real music from Lyria — enjoy!', '#4a8a4a');
+      } else {
+        setupPlayer(analysis);
+        setLyriaStatus('⚠️ Lyria unavailable — playing synthesised melody', '#c04040');
+      }
+    } else {
+      setupPlayer(analysis);
+    }
+
+    hideStatus();
+    goStep(4);
+    document.getElementById('s4').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    hideStatus();
+    showError(err.message||'Something went wrong. Please try again.');
+  }
+}
+
+function regenSong(){generateSong(true);}
+
+function updateEditDots(){
+  const dotsEl=document.getElementById('regen-dots');
+  dotsEl.innerHTML='';
+  for(let i=0;i<MAX_EDITS;i++){
+    const d=document.createElement('div');
+    d.className='attempt-dot '+(i<editsUsed?'used':'remaining');
+    dotsEl.appendChild(d);
+  }
+  const left=MAX_EDITS-editsUsed;
+  document.getElementById('edits-left-label').textContent=`${left} edit${left!==1?'s':''} remaining`;
+  document.getElementById('regen-btn').disabled=left===0;
+}
+
+// ── Claude API ──
+async function callClaude(apiKey, promptOverride, momentText, lifeWord){
+  const feelingContext=[
+    selectedFeeling?`Current feeling: ${selectedFeeling}`:'',
+    selectedGenre?`Preferred genre: ${selectedGenre}`:'',
+    selectedTempo?`Preferred tempo: ${selectedTempo}`:'',
+    lifeWord?`Their life right now: "${lifeWord}"`:'',
+    momentText?`Their memory of this place: "${momentText}"`:'',
+    promptOverride?`SPECIFIC SONG DIRECTION: "${promptOverride}"`:'',
+  ].filter(Boolean).join('\n');
+
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1200,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:imgMime,data:imgB64}},
+        {type:'text',text:`You are a synesthetic songwriter and colour theorist. Analyse this photo using colour-to-tone mapping:
+- Warm reds/oranges → major keys, high energy
+- Cool blues/greens → minor keys, contemplative
+- Golden/amber → nostalgic, acoustic
+- High contrast → dynamic rhythm
+- Soft/muted tones → gentle, ambient
+
+User context:
+${feelingContext}
+
+Respond ONLY with a JSON object (no markdown, no backticks):
+{
+  "songTitle": "3-6 word evocative song title",
+  "location": "best guess at scene in 5 words or less",
+  "vibeDescription": "2-3 poetic sentences about mood and atmosphere, written like a cherished memory. Reference specific visual elements from the photo.",
+  "colours": ["#hex1","#hex2","#hex3","#hex4","#hex5"],
+  "dominantMood": "one word mood",
+  "colourMusicMapping": "1 sentence explaining how the photo's colours mapped to the music",
+  "lyrics": "Song with [Verse 1]\\n...\\n\\n[Chorus]\\n...\\n\\n[Verse 2]\\n...\\n\\n[Chorus]\\n... labels. Make it singable, emotional, personal. ~120 words.",
+  "tempo": "slow or medium or upbeat or fast",
+  "genre": "folk or indie or pop or jazz or ambient or electronic",
+  "musicalKey": "e.g. C major or A minor",
+  "bpm": 90
+}`}
+      ]}]
+    })
+  });
+
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`API error ${res.status}`);}
+  const data=await res.json();
+  const text=data.content[0].text.trim();
+  try{return JSON.parse(text);}
+  catch{const m=text.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);throw new Error('Could not parse response.');}
+}
+
+// ── Lyria API ──
+async function callLyria(gcpToken, analysis){
+  // Build a rich music prompt from the song analysis
+  const moodMap={
+    nostalgic:'gentle nostalgic acoustic melody',
+    joyful:'uplifting bright cheerful melody',
+    melancholic:'tender melancholic gentle melody',
+    peaceful:'calm serene ambient melody',
+    excited:'energetic lively vibrant melody',
+    romantic:'warm romantic intimate melody',
+    adventurous:'adventurous cinematic sweeping melody',
+    grateful:'warm heartfelt gentle melody',
+    lonely:'quiet introspective solitary melody',
+    free:'open expansive free-spirited melody',
+  };
+
+  const genreMap={
+    folk:'acoustic guitar, fingerpicking, soft strings',
+    indie:'indie acoustic, strummed guitar, soft drums',
+    pop:'piano, light percussion, warm synth pad',
+    jazz:'jazz piano, double bass, brushed drums',
+    ambient:'ambient pads, soft texture, no percussion',
+    electronic:'electronic pads, soft synth, gentle beats',
+    classical:'orchestral strings, piano, classical arrangement',
+  };
+
+  const mood = (analysis.dominantMood||'nostalgic').toLowerCase();
+  const genre = (analysis.genre||'folk').toLowerCase();
+  const tempo = analysis.tempo||'medium';
+  const key = analysis.musicalKey||'C major';
+  const title = analysis.songTitle||'Travel Memory';
+
+  const moodDesc = moodMap[mood] || 'gentle emotional melody';
+  const genreDesc = genreMap[genre] || 'acoustic guitar, soft strings';
+
+  const negativePrompts = {
+    nostalgic:'electric guitar, heavy drums, distortion, EDM',
+    peaceful:'drums, electric guitar, distortion, fast tempo',
+    melancholic:'upbeat percussion, EDM, cheerful, fast',
+    joyful:'dark minor, heavy metal, distortion',
+    ambient:'drums, vocals, fast tempo, electric guitar',
+  };
+  const negPrompt = negativePrompts[mood] || 'heavy metal, distortion, harsh noise';
+
+  const prompt = `${moodDesc}, ${genreDesc}, ${tempo} tempo, in ${key}. Inspired by "${title}". Travel memory music, cinematic, emotional, instrumental.`;
+
+  // We use GCP Project from token — use a placeholder project approach
+  // User needs to set their PROJECT_ID; we'll try a reasonable default and catch errors
+  const gcpProject = GCP_PROJECT;
+  const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProject}/locations/us-central1/publishers/google/models/lyria-002:predict`;
+
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${gcpToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        instances: [{ prompt, negative_prompt: negPrompt, seed: Math.floor(Math.random()*99999) }],
+        parameters: { sample_count: 1 }
+      })
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      const msg = err?.error?.message || `Lyria error ${res.status}`;
+      console.warn('Lyria error:', msg);
+      // If project ID issue, show helpful message
+      if(res.status === 404 || res.status === 403){
+        setLyriaStatus(`⚠️ Lyria: ${msg.slice(0,80)} — check Project ID`, '#c04040');
+      }
+      return null;
+    }
+
+    const data = await res.json();
+    // Lyria returns base64 audio in predictions[0].bytesBase64Encoded
+    const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
+    if(!b64){ console.warn('Lyria: no audio in response', data); return null; }
+
+    // Convert base64 to blob URL
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
+  } catch(e){
+    console.warn('Lyria fetch error:', e);
+    return null;
+  }
+}
+
+function setLyriaStatus(msg, color='#666'){
+  const el = document.getElementById('lyria-status');
+  if(!el) return;
+  el.style.display = 'block';
+  el.style.color = color;
+  el.textContent = msg;
+}
+
+// ── Real Audio Player (Lyria) ──
+let lyriaAudio = null;
+
+function setupLyriaPlayer(a, audioUrl){
+  // Clean up old audio
+  if(lyriaAudio){ lyriaAudio.pause(); lyriaAudio=null; }
+  stopMelody();
+
+  lyriaAudio = new Audio(audioUrl);
+  lyriaAudio.loop = true;
+
+  // Setup waveform bars
+  const wf=document.getElementById('waveform');
+  if(!wf.children.length){
+    for(let i=0;i<48;i++){const b=document.createElement('div');b.className='bar';b.style.cssText=`height:${15+Math.random()*70}%;--spd:${0.3+Math.random()*0.7}s;animation-delay:${Math.random()*0.8}s`;wf.appendChild(b);}
+  }
+
+  document.getElementById('play-btn').textContent='▶';
+  document.getElementById('prog-fill').style.width='0%';
+
+  // Update progress bar
+  lyriaAudio.addEventListener('timeupdate', ()=>{
+    const pf = document.getElementById('prog-fill');
+    if(pf && lyriaAudio.duration){
+      pf.style.width = (lyriaAudio.currentTime / lyriaAudio.duration * 100) + '%';
+    }
+  });
+
+  lyriaAudio.addEventListener('ended', ()=>{
+    document.getElementById('play-btn').textContent='▶';
+    document.querySelectorAll('.bar').forEach(b=>b.classList.remove('playing'));
+  });
+
+  // Update player info to show Lyria badge
+  const info = document.getElementById('player-info');
+  if(info) info.innerHTML = `${a.genre||''} · ${a.musicalKey||''} · ${a.tempo||''} tempo &nbsp;<span style="background:#c9664a;color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">🎵 Lyria</span>`;
+
+  document.getElementById('play-btn').onclick = ()=>{
+    if(lyriaAudio.paused){
+      lyriaAudio.play();
+      document.getElementById('play-btn').textContent='⏸';
+      document.querySelectorAll('.bar').forEach(b=>b.classList.add('playing'));
+    } else {
+      lyriaAudio.pause();
+      document.getElementById('play-btn').textContent='▶';
+      document.querySelectorAll('.bar').forEach(b=>b.classList.remove('playing'));
+    }
+  };
+}
+
+
+function displayResult(a){
+  document.getElementById('result-photo').src=imgDataUrl;
+  document.getElementById('result-song-title').textContent='"'+(a.songTitle||'Your Souvenir')+'"';
+  document.getElementById('result-location').textContent='📍 '+(a.location||'');
+  document.getElementById('result-vibe-text').textContent=a.vibeDescription||'';
+  document.getElementById('player-song-name').textContent=a.songTitle||'';
+  document.getElementById('player-info').textContent=`${a.genre||''} · ${a.musicalKey||''} · ${a.tempo||''} tempo`;
+
+  // Colour strip
+  const strip=document.getElementById('colour-strip');
+  strip.innerHTML='';
+  (a.colours||[]).forEach(hex=>{
+    const c=document.createElement('div');c.className='colour-chip';c.style.background=hex;c.title=hex;strip.appendChild(c);
+  });
+
+  // Tags
+  const tags=document.getElementById('result-tags');
+  tags.innerHTML='';
+  [a.dominantMood, a.genre, a.musicalKey, a.tempo&&a.tempo+' tempo', a.colourMusicMapping].filter(Boolean).forEach(t=>{
+    if(t.length<60){const s=document.createElement('span');s.className='tag';s.textContent=t;tags.appendChild(s);}
+  });
+
+  // Lyrics
+  const lyricsEl=document.getElementById('result-lyrics');
+  lyricsEl.innerHTML='';
+  let inChorus=false;
+  (a.lyrics||'').split('\n').forEach(line=>{
+    if(line.startsWith('[Chorus]')) inChorus=true;
+    else if(line.match(/^\[(Verse|Bridge|Outro)/i)) inChorus=false;
+    const span=document.createElement('span');
+    span.textContent=line+'\n';
+    if(inChorus&&line.trim()) span.className='lyrics-chorus';
+    lyricsEl.appendChild(span);
+  });
+
+  // Memory echo
+  const moment=document.getElementById('moment-text').value.trim();
+  if(moment){
+    document.getElementById('echo-text').textContent=moment;
+    document.getElementById('result-memory-echo').style.display='block';
+  }
+
+  // Regen dots init
+  updateEditDots();
+
+  // Copy
+  document.getElementById('copy-btn').onclick=()=>{
+    navigator.clipboard.writeText(`"${a.songTitle}"\n\n${a.lyrics}\n\n— Sonic Souvenir`);
+    document.getElementById('copy-btn').textContent='✓ Copied!';
+    setTimeout(()=>document.getElementById('copy-btn').textContent='📋 Copy Lyrics',2000);
+  };
+
+  // Save
+  document.getElementById('save-btn').onclick=()=>{
+    saveMemory(a);
+    document.getElementById('save-btn').textContent='✓ Saved!';
+    setTimeout(()=>{
+      document.getElementById('save-btn').textContent='💾 Save to Memories';
+      document.getElementById('account-nudge').style.display='block';
+    },1500);
+  };
+}
+
+// ── Save to memories ──
+function saveMemory(a){
+  const mem={
+    id:Date.now(),
+    date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),
+    imgDataUrl,
+    songTitle:a.songTitle,
+    location:a.location,
+    mood:a.dominantMood||selectedFeeling,
+    colours:a.colours,
+    lyrics:a.lyrics,
+    analysis:a,
+    feeling:selectedFeeling,
+  };
+  memories.unshift(mem);
+  document.getElementById('save-btn').textContent='✓ Saved!';
+  setTimeout(()=>document.getElementById('save-btn').textContent='💾 Save to Memories',2000);
+}
+
+// ── Timeline ──
+function renderTimeline(){
+  const grid=document.getElementById('timeline-grid');
+  document.getElementById('memory-count').textContent=memories.length?`${memories.length} memor${memories.length!==1?'ies':'y'}`:'';
+  if(!memories.length){
+    grid.innerHTML=`<div class="timeline-empty"><span class="big-icon">🗺</span><p style="font-family:'Lora',serif;font-style:italic;font-size:1.1rem;margin-bottom:8px;">No memories yet</p><p style="font-size:13px;">Create your first Sonic Souvenir to start your timeline.</p></div>`;
+    return;
+  }
+  grid.innerHTML='';
+  memories.forEach(mem=>{
+    const card=document.createElement('div');
+    card.className='memory-card fade-in';
+    card.innerHTML=`
+      <img class="memory-img" src="${mem.imgDataUrl}" alt="">
+      <div class="memory-body">
+        <div class="memory-date">${mem.date}</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <div class="memory-title">"${mem.songTitle}"</div>
+            <div class="memory-location">📍 ${mem.location||''}</div>
+          </div>
+          <button class="memory-play" onclick="playMemory(${mem.id})">▶</button>
+        </div>
+        <span class="memory-mood">${mem.mood||''}</span>
+        <div class="memory-colours">${(mem.colours||[]).map(c=>`<div class="memory-colour-chip" style="background:${c}"></div>`).join('')}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function playMemory(id){
+  const mem=memories.find(m=>m.id===id);
+  if(!mem) return;
+  stopMelody();
+  startMelody(mem.analysis);
+}
+
+// ── Web Audio Engine ──
+const SCALES={
+  nostalgic:[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25],
+  joyful:   [329.63,369.99,415.30,493.88,554.37,622.25,659.25,739.99],
+  melancholic:[220.00,246.94,261.63,293.66,329.63,349.23,392.00,440.00],
+  peaceful: [261.63,293.66,349.23,392.00,440.00,523.25,587.33,659.25],
+  excited:  [392.00,440.00,493.88,587.33,659.25,698.46,783.99,880.00],
+  dreamy:   [261.63,311.13,349.23,392.00,466.16,523.25,587.33,622.25],
+  epic:     [196.00,220.00,261.63,293.66,329.63,392.00,440.00,493.88],
+  free:     [329.63,392.00,440.00,523.25,587.33,659.25,783.99,880.00],
+};
+const TEMPOS={slow:880,medium:560,upbeat:360,fast:240};
+const PATTERNS={
+  folk:   [0,2,4,2,0,2,4,5,4,2,0,2,5,4,2,0],
+  indie:  [0,0,2,4,5,4,2,0,2,4,5,4,2,4,2,0],
+  pop:    [4,4,5,4,2,0,0,2,4,5,4,2,0,2,4,4],
+  jazz:   [0,2,3,4,6,4,3,2,0,3,5,6,4,3,2,0],
+  ambient:[0,0,2,0,0,2,4,2,0,0,4,2,0,2,0,0],
+  electronic:[4,4,2,0,4,4,2,5,4,4,2,0,5,5,2,4],
+  classical:[0,1,2,3,4,3,2,1,0,2,4,5,4,2,0,0],
+};
+
+function setupPlayer(a){
+  const wf=document.getElementById('waveform');
+  if(!wf.children.length){
+    for(let i=0;i<48;i++){const b=document.createElement('div');b.className='bar';b.style.cssText=`height:${15+Math.random()*70}%;--spd:${0.3+Math.random()*0.7}s;animation-delay:${Math.random()*0.8}s`;wf.appendChild(b);}
+  }
+  document.getElementById('play-btn').textContent='▶';
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('play-btn').onclick=()=>isPlaying?stopMelody():startMelody(a);
+}
+
+function startMelody(a){
+  if(audioCtx) audioCtx.close();
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  isPlaying=true; currentBeat=0;
+  const totalBeats=96;
+  document.getElementById('play-btn').textContent='⏸';
+  document.querySelectorAll('.bar').forEach(b=>b.classList.add('playing'));
+
+  const moodKey=(a.dominantMood||a.mood||'nostalgic').toLowerCase();
+  const scale=SCALES[moodKey]||SCALES.nostalgic;
+  const beatMs=TEMPOS[a.tempo]||560;
+  const genre=(a.genre||'folk').toLowerCase();
+  const pat=PATTERNS[genre]||PATTERNS.folk;
+
+  function tick(){
+    if(!isPlaying||currentBeat>=totalBeats){stopMelody();return;}
+    const t=audioCtx.currentTime;
+    const ni=pat[currentBeat%pat.length]%scale.length;
+    const freq=scale[ni];
+    const dur=(beatMs/1000)*0.75;
+
+    playNote(freq,t,dur,0.14,'melody',genre);
+    if(currentBeat%4===0||currentBeat%4===2) playNote(freq*0.25,t,dur*1.3,0.06,'pad','');
+    if(currentBeat%8===0) playNote(freq*1.5,t,dur*0.3,0.04,'pad','');
+
+    const pf=document.getElementById('prog-fill');
+    if(pf) pf.style.width=(currentBeat/totalBeats*100)+'%';
+    currentBeat++;
+  }
+  tick();
+  playInterval=setInterval(tick,beatMs);
+}
+
+function playNote(freq,t,dur,gain,type,genre){
+  if(!audioCtx) return;
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  const f=audioCtx.createBiquadFilter();
+  o.connect(f);f.connect(g);g.connect(audioCtx.destination);
+  o.type=type==='pad'?'sine':genre==='electronic'?'sawtooth':'triangle';
+  f.type='bandpass';f.frequency.value=type==='pad'?500:1100;f.Q.value=0.8;
+  o.frequency.value=freq;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(gain,t+0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.start(t);o.stop(t+dur+0.05);
+}
+
+function stopMelody(){
+  isPlaying=false;clearInterval(playInterval);
+  if(audioCtx){audioCtx.close();audioCtx=null;}
+  if(lyriaAudio){lyriaAudio.pause();lyriaAudio=null;}
+  document.querySelectorAll('.bar').forEach(b=>b.classList.remove('playing'));
+  const pb=document.getElementById('play-btn');if(pb) pb.textContent='▶';
+  const pf=document.getElementById('prog-fill');if(pf) pf.style.width='0%';
+  currentBeat=0;
+}
+
+// ── Helpers ──
+function showStatus(msg){document.getElementById('status-text').textContent=msg;document.getElementById('status').classList.add('active');}
+function hideStatus(){document.getElementById('status').classList.remove('active');}
+function showError(msg){const e=document.getElementById('error-bar');e.textContent='⚠️ '+msg;e.style.display='block';}
+
+// ── Share functions ──
+function getShareText(){
+  if(!currentAnalysis) return '';
+  const title = currentAnalysis.songTitle || 'My Sonic Souvenir';
+  const location = currentAnalysis.location || 'a special place';
+  const lyrics = currentAnalysis.lyrics || '';
+  return `🎵 "${title}"\n📍 ${location}\n\nI turned a photo into a song using Sonic Souvenir!\n\n${lyrics}\n\n— Made with Sonic Souvenir ✦`;
+}
+
+function shareEmail(){
+  if(!currentAnalysis) return;
+  const title = currentAnalysis.songTitle || 'My Sonic Souvenir';
+  const subject = encodeURIComponent(`🎵 My Sonic Souvenir — "${title}"`);
+  const body = encodeURIComponent(getShareText());
+  window.open(`mailto:?subject=${subject}&body=${body}`);
+}
+
+function shareWhatsApp(){
+  if(!currentAnalysis) return;
+  const text = encodeURIComponent(getShareText());
+  // Works on mobile (opens app) and desktop (opens web.whatsapp.com)
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+async function shareNative(){
+  if(!currentAnalysis) return;
+  const title = currentAnalysis.songTitle || 'My Sonic Souvenir';
+  const text = getShareText();
+  // Use native share sheet on mobile if available
+  if(navigator.share){
+    try{
+      await navigator.share({ title: `🎵 "${title}"`, text });
+      return;
+    } catch(e){ /* user cancelled or not supported, fall through */ }
+  }
+  // Fallback: copy to clipboard
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('native-share-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>btn.textContent='📤 Share', 2000);
+  });
+}
+
+
+function showAccountModal(){
+  document.getElementById('account-modal').style.display='flex';
+}
+
+// ── Collab ──
+let collabCode='', collabParticipants=[], collabFeelings=[];
+const ADJECTIVES=['GOLDEN','SUNSET','BREEZY','MISTY','VIVID','CALM','BOLD','SOFT'];
+const NUMBERS=()=>Math.floor(10+Math.random()*89);
+
+document.querySelectorAll('[data-cf]').forEach(b=>b.addEventListener('click',()=>{
+  b.classList.toggle('selected');
+}));
+
+function startCollabSession(){
+  collabCode=ADJECTIVES[Math.floor(Math.random()*ADJECTIVES.length)]+'-'+NUMBERS();
+  collabParticipants=['You (host)'];
+  collabFeelings=[];
+  document.getElementById('collab-code-display').textContent=collabCode;
+  document.getElementById('collab-session-card').style.display='block';
+  renderCollabParticipants();
+  // Simulate a friend joining after 3s for demo effect
+  setTimeout(()=>{
+    collabParticipants.push('Travel Mate 🌍');
+    renderCollabParticipants();
+  },3000);
+}
+
+function joinCollabSession(){
+  const code=document.getElementById('collab-code-input').value.trim().toUpperCase();
+  if(!code){alert('Please enter a session code.');return;}
+  collabCode=code;
+  collabParticipants=['You'];
+  document.getElementById('collab-code-display').textContent=collabCode;
+  document.getElementById('collab-session-card').style.display='block';
+  renderCollabParticipants();
+}
+
+function renderCollabParticipants(){
+  const el=document.getElementById('collab-participants');
+  el.innerHTML=collabParticipants.map(p=>`<span style="padding:6px 14px;background:var(--cream2);border-radius:16px;font-size:12px;color:var(--ink-light);">✦ ${p}</span>`).join('');
+}
+
+function submitCollabFeeling(){
+  const feelings=Array.from(document.querySelectorAll('[data-cf].selected')).map(b=>b.dataset.cf);
+  const memory=document.getElementById('collab-my-memory').value.trim();
+  if(!feelings.length){alert('Please select at least one feeling.');return;}
+  collabFeelings.push({name:collabParticipants[0], feelings, memory});
+  document.getElementById('collab-compose-card').style.display='block';
+  const summary=collabFeelings.map(f=>`<strong>${f.name}</strong> feels ${f.feelings.join(', ')}${f.memory?' — "'+f.memory+'"':''}`).join('<br>');
+  document.getElementById('collab-summary').innerHTML=`The song will blend:<br><br>${summary}<br><br>🎵 Ready to compose your shared souvenir.`;
+  document.getElementById('collab-compose-card').scrollIntoView({behavior:'smooth'});
+}
+
+function composeCollabSong(){
+  alert('✦ For the full demo, go to Create tab — upload your photo and the blended feelings will be passed in.\n\nIn v2, this will compose directly from all participants in real-time! 🎵');
+}
+
+function copyCollabCode(){
+  navigator.clipboard.writeText(`Join my Sonic Souvenir collab! Code: ${collabCode} — sonicsouvenir.app`);
+  alert('Copied! Share this with your travel mates 🌍');
+}
+
+function shareCollabWhatsApp(){
+  const text=encodeURIComponent(`🎵 Let's make a song together! Join my Sonic Souvenir collab session.\n\nCode: ${collabCode}\n\nWe'll blend our feelings from the same place into one shared song. ✦`);
+  window.open(`https://wa.me/?text=${text}`,'_blank');
+}
+
+
+
+function resetAll(){
+  stopMelody();
+  imgB64=null;imgMime=null;imgDataUrl=null;
+  selectedFeeling='';selectedGenre='';selectedTempo='medium';
+  editsUsed=0;currentAnalysis=null;
+  document.getElementById('upload-zone').innerHTML=`<span class="icon">📸</span><h3>Drop your photo here</h3><p>Any place · Any moment · Anywhere on earth</p>`;
+  document.getElementById('upload-zone').classList.remove('has-img');
+  document.getElementById('moment-text').value='';
+  document.getElementById('life-word').value='';
+  document.getElementById('prompt-override').value='';
+  document.getElementById('regen-prompt').value='';
+  document.getElementById('error-bar').style.display='none';
+  document.getElementById('account-nudge').style.display='none';
+  document.querySelectorAll('.feeling-pill').forEach(p=>p.classList.remove('selected'));
+  goStep(1);window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

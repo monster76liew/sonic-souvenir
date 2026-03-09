@@ -637,7 +637,6 @@ async function generateSong(isRegen=false){
   const apiKey = ANTHROPIC_KEY;
   const gcpToken = GCP_TOKEN;
   if(!imgB64){showError('Please upload a photo first.');return;}
-  if(!apiKey || apiKey === 'YOUR_ANTHROPIC_KEY_HERE'){showError('App not configured — contact the developer.');return;}
 
   if(isRegen){
     if(editsUsed>=MAX_EDITS){showError('Maximum 3 edits reached for this souvenir.');return;}
@@ -658,7 +657,26 @@ async function generateSong(isRegen=false){
   const lifeWord=document.getElementById('life-word').value.trim();
 
   try{
-    const analysis=await callClaude(apiKey, promptOverride, momentText, lifeWord);
+    let analysis;
+    if(!apiKey){
+      // Demo mode — simulate API delay then return sample song
+      await new Promise(r=>setTimeout(r,2200));
+      analysis={
+        songTitle:'Golden Hour at the Corner Table',
+        location:'Warm café, golden afternoon',
+        vibeDescription:'The light falls in long amber streaks across the worn wooden table, catching dust motes suspended mid-air like tiny forgotten wishes. There is a particular stillness here — the kind that only exists between one chapter ending and another quietly beginning. The warmth is not just the light; it is the feeling of being exactly where you are supposed to be.',
+        colours:['#c9864a','#e8b87a','#f5d9a8','#8a6a3a','#d4956a'],
+        dominantMood:'nostalgic',
+        colourMusicMapping:'Warm amber and gold tones mapped to G major pentatonic scale with a slow fingerpicked acoustic pattern.',
+        lyrics:`[Verse 1]\nThe afternoon light spills like honey on the floor\nA dog-eared book, a coffee cup, nothing less nothing more\nI've been running so long I forgot how to stay\nBut something about this corner made me put my bags away\n\n[Chorus]\nGolden hour, hold me here a little longer\nLet the world spin soft and slow\nGolden hour, every passing minute stronger\nIn the warmth of all I know\n\n[Verse 2]\nThe radio plays something I half-remember from before\nA melody that travels back to an unlocked door\nMaybe home isn't a place, maybe it's a light\nThe kind that finds you quietly on an ordinary afternoon\n\n[Chorus]\nGolden hour, hold me here a little longer\nLet the world spin soft and slow\nGolden hour, every passing minute stronger\nIn the warmth of all I know`,
+        tempo:'slow',
+        genre:'folk',
+        musicalKey:'G major',
+        bpm:72
+      };
+    } else {
+      analysis = await callClaude(apiKey, promptOverride, momentText, lifeWord);
+    }
     currentAnalysis=analysis;
     displayResult(analysis);
 
